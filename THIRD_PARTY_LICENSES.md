@@ -1,6 +1,15 @@
-MIT License
+# Third-Party Licenses
 
-Copyright (c) 2026 Kevin Chen
+This project uses the following third-party packages and libraries:
+
+1. Bevy Engine
+   - Dual Licensed under either MIT or Apache License 2.0.
+   - This project chooses to use Bevy under the MIT License.
+   - https://github.com/bevyengine/bevy/blob/v0.19.0/LICENSE-MIT, copied below for convenience.
+   - https://github.com/bevyengine/bevy/blob/v0.19.0/LICENSE-APACHE
+
+## MIT License
+MIT License
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
