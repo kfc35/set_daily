@@ -24,10 +24,10 @@ pub struct GameState {
 /// there is one of each unique card, for a total of 3^4 = 81 cards.
 #[derive(Component, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Card {
-    shape: Shape,
-    quantity: Quantity,
-    fill: Fill,
-    color: Color,
+    pub shape: Shape,
+    pub quantity: Quantity,
+    pub fill: Fill,
+    pub color: Color,
 }
 
 impl Card {
@@ -72,6 +72,23 @@ impl Distribution<Shape> for StandardUniform {
     }
 }
 
+impl Shape {
+    pub fn sample_std_uniform_excluding<R: Rng + ?Sized>(
+        rng: &mut R,
+        exclude: Shape,
+    ) -> (Shape, Shape) {
+        let shapes = match exclude {
+            Shape::Diamond => [Shape::Oval, Shape::Squiggle],
+            Shape::Oval => [Shape::Diamond, Shape::Squiggle],
+            Shape::Squiggle => [Shape::Diamond, Shape::Oval],
+        };
+        match rng.random_range(0..=1) {
+            0 => (shapes[0], shapes[1]),
+            _ => (shapes[1], shapes[0]),
+        }
+    }
+}
+
 /// One of the four dimensions that a Set card can vary in.
 ///
 /// Describes the number of shapes that are on the card.
@@ -88,6 +105,23 @@ impl Distribution<Quantity> for StandardUniform {
             0 => Quantity::One,
             1 => Quantity::Two,
             _ => Quantity::Three,
+        }
+    }
+}
+
+impl Quantity {
+    pub fn sample_std_uniform_excluding<R: Rng + ?Sized>(
+        rng: &mut R,
+        exclude: Quantity,
+    ) -> (Quantity, Quantity) {
+        let quantities = match exclude {
+            Quantity::One => [Quantity::Two, Quantity::Three],
+            Quantity::Two => [Quantity::One, Quantity::Three],
+            Quantity::Three => [Quantity::One, Quantity::Two],
+        };
+        match rng.random_range(0..=1) {
+            0 => (quantities[0], quantities[1]),
+            _ => (quantities[1], quantities[0]),
         }
     }
 }
@@ -112,6 +146,23 @@ impl Distribution<Fill> for StandardUniform {
     }
 }
 
+impl Fill {
+    pub fn sample_std_uniform_excluding<R: Rng + ?Sized>(
+        rng: &mut R,
+        exclude: Fill,
+    ) -> (Fill, Fill) {
+        let fills = match exclude {
+            Fill::Empty => [Fill::Dashed, Fill::Filled],
+            Fill::Dashed => [Fill::Empty, Fill::Filled],
+            Fill::Filled => [Fill::Empty, Fill::Dashed],
+        };
+        match rng.random_range(0..=1) {
+            0 => (fills[0], fills[1]),
+            _ => (fills[1], fills[0]),
+        }
+    }
+}
+
 /// One of the four dimensions that a Set card can vary in.
 ///
 /// Describes the color of the shape(s) that are on the card.
@@ -132,6 +183,23 @@ impl Distribution<Color> for StandardUniform {
     }
 }
 
+impl Color {
+    pub fn sample_std_uniform_excluding<R: Rng + ?Sized>(
+        rng: &mut R,
+        exclude: Color,
+    ) -> (Color, Color) {
+        let colors = match exclude {
+            Color::Blue => [Color::Gold, Color::Pink],
+            Color::Gold => [Color::Blue, Color::Pink],
+            Color::Pink => [Color::Blue, Color::Gold],
+        };
+        match rng.random_range(0..=1) {
+            0 => (colors[0], colors[1]),
+            _ => (colors[1], colors[0]),
+        }
+    }
+}
+
 /// Initializes the game state.
 pub fn initialize_game_state(mut commands: Commands) {
     let state = GameState {
@@ -146,25 +214,81 @@ fn randomize_initial_cards() -> [Card; 12] {
         22, 6, 255, 8, 110, 150, 35, 88, 140, 203, 92, 174, 244, 39, 4, 5,
     ]);
 
-    // first select a random card
-    let initial_card = rng.sample(StandardUniform);
-    // pick how the next two cards in the set should be chosen
+    let [first_card, second_card, third_card] = generate_first_set(&mut rng);
+
+    // after you have a first set, have to figure out how to get the next set
+    // -- use a card from the same set as the first: results in 5 cards
+    //    this cannot result in a new set.
+    // -- get a new set: results in 6 cards.
+
+    // check if any new sets can be made with the new cards added
+    // by gathering any potential 2 cards where a third card added would make a set.
+
     // pick whether a set should be made with an existing card or not.
 
     // If it should, choose a card, and then pick how the next two cards should be chosen.
     // If it should not, generate another random set
+
+    // Remember to shuffle the cards at the end.
     [
-        initial_card,
-        initial_card,
-        initial_card,
-        initial_card,
-        initial_card,
-        initial_card,
-        initial_card,
-        initial_card,
-        initial_card,
-        initial_card,
-        initial_card,
-        initial_card,
+        first_card,
+        second_card,
+        third_card,
+        first_card,
+        first_card,
+        first_card,
+        first_card,
+        first_card,
+        first_card,
+        first_card,
+        first_card,
+        first_card,
     ]
+}
+
+/// Randomly generates the first Set of cards.
+fn generate_first_set<R: Rng + ?Sized>(mut rng: &mut R) -> [Card; 3] {
+    // The first card is randomly generated.
+    let first_card: Card = rng.sample(StandardUniform);
+    // Decide how the next two cards in the same set should be chosen
+    let (first_set_same_shape,
+      first_set_same_quantity,
+      first_set_same_fill,
+      first_set_same_color): (bool, bool, bool, bool) =
+      (rng.random(), rng.random(), rng.random(), rng.random());
+    // For each aspect, the cards have to either be all the same or all different in that given aspect.
+    let (second_card_shape, third_card_shape) = if first_set_same_shape {
+        (first_card.shape, first_card.shape)
+    } else {
+        Shape::sample_std_uniform_excluding(&mut rng, first_card.shape)
+    };
+    let (second_card_quantity, third_card_quantity) = if first_set_same_quantity {
+        (first_card.quantity, first_card.quantity)
+    } else {
+        Quantity::sample_std_uniform_excluding(&mut rng, first_card.quantity)
+    };
+    let (second_card_fill, third_card_fill) = if first_set_same_fill {
+        (first_card.fill, first_card.fill)
+    } else {
+        Fill::sample_std_uniform_excluding(&mut rng, first_card.fill)
+    };
+    let (second_card_color, third_card_color) = if first_set_same_color {
+        (first_card.color, first_card.color)
+    } else {
+        Color::sample_std_uniform_excluding(&mut rng, first_card.color)
+    };
+    let second_card = Card {
+        shape: second_card_shape,
+        quantity: second_card_quantity,
+        fill: second_card_fill,
+        color: second_card_color,
+    };
+    let third_card = Card {
+        shape: third_card_shape,
+        quantity: third_card_quantity,
+        fill: third_card_fill,
+        color: third_card_color,
+    };
+
+    [first_card, second_card, third_card]
 }
