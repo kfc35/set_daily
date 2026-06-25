@@ -20,12 +20,29 @@ pub struct GameState {
     /// This vec must have max size 3. Once it has size 3, it is checked
     /// whether it is a valid set.
     pub current_guess: Vec<Entity>,
+    /// The sets which the user has found so far.
+    pub found_sets: Vec<[Card; 3]>,
+}
+
+impl GameState {
+    /// Check whether sets contains the guess.
+    ///
+    /// Guess must be sorted, or else this function will panic.
+    pub fn contains_guess(&self, guess: &[Card; 3]) -> bool {
+        if guess.is_sorted() {
+            self.sets.contains(guess)
+        } else {
+            panic!("Must sort the set before checking that it is in GameState.sets.")
+        }
+    }
 }
 
 /// A card in a game of Set. Its contents can vary in four dimensions: [`Shape`],
 /// [`Quantity`], [`Fill`], and [`Color`]. In a standard Set deck,
 /// there is one of each unique card, for a total of 3^4 = 81 cards.
-#[derive(Component, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+// The Default derive does not make much sense for a card, but it is so that we can
+// take advantage of bsn!
+#[derive(Component, Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Card {
     pub shape: Shape,
     pub quantity: Quantity,
@@ -47,8 +64,11 @@ impl Distribution<Card> for StandardUniform {
 /// One of the four dimensions that a Set card can vary in.
 ///
 /// Describes the shape that is on the card.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+// The Default derive does not make much sense, but it is so that we can
+// take advantage of bsn!
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Shape {
+    #[default]
     Diamond,
     Oval,
     Squiggle,
@@ -99,8 +119,11 @@ impl Shape {
 /// One of the four dimensions that a Set card can vary in.
 ///
 /// Describes the number of shapes that are on the card.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+// The Default derive does not make much sense, but it is so that we can
+// take advantage of bsn!
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Quantity {
+    #[default]
     One,
     Two,
     Three,
@@ -151,8 +174,11 @@ impl Quantity {
 /// One of the four dimensions that a Set card can vary in.
 ///
 /// Describes the inside of the shape(s) that are on the card.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+// The Default derive does not make much sense, but it is so that we can
+// take advantage of bsn!
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Fill {
+    #[default]
     Empty,
     Dashed,
     Filled,
@@ -203,8 +229,11 @@ impl Fill {
 /// One of the four dimensions that a Set card can vary in.
 ///
 /// Describes the color of the shape(s) that are on the card.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+// The Default derive does not make much sense, but it is so that we can
+// take advantage of bsn!
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Color {
+    #[default]
     Blue,
     Gold,
     Pink,
@@ -259,6 +288,7 @@ pub fn initialize_game_state(mut commands: Commands) {
         cards,
         sets,
         current_guess: vec![],
+        found_sets: vec![],
     };
     commands.insert_resource(state);
 }
