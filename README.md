@@ -1,7 +1,7 @@
 # set_daily
 Just Another Daily Game, NOT made with AI.
 
-## Credits
+## Thanks
 
 ### SET Creator
 SET was designed by Marsha Falco and published by Set Enterprises, now under PlayMonster. Thank you for creating a wonderful game.
@@ -11,3 +11,6 @@ This app is powered by Bevy Engine, which is free and open-source forever! It is
 
 ### Literally Random Utilities
 Thanks to the rust-random team and their contributors for giving me the ability to randomize games with reproducibility without much of a headache.
+
+### bytemuck
+Thanks to Lokathor and the bytemuck contributors for making it easy for me to make the rng seed.

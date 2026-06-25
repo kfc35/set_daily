@@ -4,6 +4,7 @@ use rand::{
     distr::{Distribution, StandardUniform},
     prelude::SliceRandom,
 };
+use std::time::SystemTime;
 
 extern crate alloc;
 use alloc::vec::Vec;
@@ -13,12 +14,14 @@ use alloc::vec::Vec;
 pub struct GameState {
     /// The cards the user tries to make Sets out of.
     pub cards: [Card; 12],
-    /// The 6 sets that exist among the cards, i.e. the answer key.
+    /// The six sets that exist among the cards, i.e. the answer key.
+    ///
+    /// Each individual set is sorted.
     sets: [[Card; 3]; 6],
     /// The current guess that the user is in the process of selecting.
     ///
-    /// This vec must have max size 3. Once it has size 3, it is checked
-    /// whether it is a valid set.
+    /// This vec must have max size 3. Once it has size 3, it should be checked
+    /// whether it is a valid set and cleared.
     pub current_guess: Vec<Entity>,
     /// The sets which the user has found so far.
     pub found_sets: Vec<[Card; 3]>,
@@ -27,7 +30,8 @@ pub struct GameState {
 impl GameState {
     /// Check whether sets contains the guess.
     ///
-    /// Guess must be sorted, or else this function will panic.
+    /// ## Panics
+    /// `guess` must be sorted, or else this function will panic.
     pub fn contains_guess(&self, guess: &[Card; 3]) -> bool {
         if guess.is_sorted() {
             self.sets.contains(guess)
@@ -283,7 +287,14 @@ impl Color {
 
 /// Initializes the game state.
 pub fn initialize_game_state(mut commands: Commands) {
-    let (cards, sets) = initialize_cards();
+    let seconds_since_epoch = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .expect("Cannot get current date to initialize game state.").as_secs();
+    let years_since_epoch = seconds_since_epoch / 60 / 525600;
+    let days_since_epoch = seconds_since_epoch / 60 / 60 / 24;
+    let seed = bytemuck::cast::<[u64; 2], [u8; 16]>([years_since_epoch, days_since_epoch]);
+
+    let (cards, sets) = initialize_cards(seed);
     let state = GameState {
         cards,
         sets,
@@ -293,10 +304,8 @@ pub fn initialize_game_state(mut commands: Commands) {
     commands.insert_resource(state);
 }
 
-fn initialize_cards() -> ([Card; 12], [[Card; 3]; 6]) {
-    let mut rng = rand_pcg::Pcg32::from_seed([
-        22, 6, 255, 8, 110, 150, 35, 88, 140, 203, 92, 174, 244, 39, 4, 5,
-    ]);
+fn initialize_cards(seed: [u8; 16]) -> ([Card; 12], [[Card; 3]; 6]) {
+    let mut rng = rand_pcg::Pcg32::from_seed(seed);
     let mut cards: Vec<Card> = vec![];
     let mut sets = vec![];
 
