@@ -1,7 +1,7 @@
 use bevy::{
     DefaultPlugins,
     app::{App, Startup, Update},
-    asset::{AssetServer, RenderAssetUsages},
+    asset::{AssetMetaCheck, AssetPlugin, AssetServer, RenderAssetUsages},
     camera::Camera2d,
     ecs::prelude::*,
     image::{ImageLoaderSettings, ImagePlugin, ImageSamplerDescriptor},
@@ -17,9 +17,17 @@ use state::{Card, Color, Fill, GameState, Quantity, Shape};
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(ImagePlugin {
-            default_sampler: ImageSamplerDescriptor::nearest(),
-        }))
+        .add_plugins(
+            DefaultPlugins
+                .set(ImagePlugin {
+                    // All of the assets are pixel art, so pixelated looks best.
+                    default_sampler: ImageSamplerDescriptor::nearest(),
+                })
+                .set(AssetPlugin {
+                    meta_check: AssetMetaCheck::Never,
+                    ..Default::default()
+                }),
+        )
         .add_systems(
             Startup,
             (state::initialize_game_state, initialize_ui).chain(),
