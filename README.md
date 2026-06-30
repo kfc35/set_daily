@@ -15,5 +15,5 @@ Thanks to the rust-random team and their contributors for giving me the ability 
 ### bytemuck
 Thanks to Lokathor and the bytemuck contributors for making it easy for me to make the rng seed.
 
-### web_time
-Thanks to daxpedda and the web_time contributors for giving me the time utils I needed to support a web target version.
+### chrono and chrono_tz
+Thanks to chronotope team and contributors for giving me the time utils I need to ensure the game works on web and on the computer.

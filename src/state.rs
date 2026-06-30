@@ -1,4 +1,5 @@
 use bevy::ecs::prelude::*;
+use chrono::{Datelike, Utc};
 use rand::{
     Rng, RngExt, SeedableRng,
     distr::{Distribution, StandardUniform},
@@ -7,11 +8,6 @@ use rand::{
 
 extern crate alloc;
 use alloc::vec::Vec;
-
-#[cfg(not(target_arch = "wasm32"))]
-use std::time::SystemTime;
-#[cfg(target_arch = "wasm32")]
-use web_time::SystemTime;
 
 /// Contains the current game state.
 #[derive(Resource)]
@@ -291,13 +287,11 @@ impl Color {
 
 /// Initializes the game state.
 pub fn initialize_game_state(mut commands: Commands) {
-    let seconds_since_epoch = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .expect("Cannot get current date to initialize game state.")
-        .as_secs();
-    let years_since_epoch = seconds_since_epoch / 60 / 525600;
-    let days_since_epoch = seconds_since_epoch / 60 / 60 / 24;
-    let seed = bytemuck::cast::<[u64; 2], [u8; 16]>([years_since_epoch, days_since_epoch]);
+    // The game will change seeds every Eastern time day.
+    let time = Utc::now().with_timezone(&chrono_tz::US::Eastern);
+    let year = time.year() as u64;
+    let day_of_year = time.ordinal() as u64;
+    let seed = bytemuck::cast::<[u64; 2], [u8; 16]>([year, day_of_year]);
 
     let (cards, sets) = initialize_cards(seed);
     let state = GameState {

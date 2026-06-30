@@ -21,10 +21,13 @@ This project uses the following third-party packages and libraries:
   - https://github.com/Lokathor/bytemuck/blob/v1.25.0/LICENSE-APACHE
   - https://github.com/Lokathor/bytemuck/blob/v1.25.0/LICENSE-ZLIB
 
-4. web-time
+4. chrono
   - web-time is dual licensed under MIT and Apache 2.0
-  - https://github.com/daxpedda/web-time/blob/v1.1.0/LICENSE-MIT
-  - https://github.com/daxpedda/web-time/blob/v1.1.0/LICENSE-APACHE
+  - https://github.com/chronotope/chrono/blob/v0.4.45/LICENSE.txt
+
+5. chrono_tz
+  - chrono_tz is dual licensed under MIT and Apache 2.0
+  - https://github.com/chronotope/chrono-tz/blob/v0.10.4/LICENSE
 
 ## MIT License
 
@@ -34,7 +37,12 @@ Copyright (c) 2014 The Rust Project Developers
 
 Copyright (c) 2019 Daniel "Lokathor" Gee.
 
-Copyright (c) 2023 dAxpeDDa
+Copyright (c) 2014, Kang Seonghoon.
+
+Copyright (c) 2014--2026, Kang Seonghoon and
+contributors.
+
+Copyright (c) 2016-2024 Benjamin Sago & the chronotope maintainers
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
