@@ -1,9 +1,12 @@
 use bevy::{
     DefaultPlugins,
     app::{App, Startup, Update},
+    asset::{AssetServer, RenderAssetUsages},
     camera::Camera2d,
     ecs::prelude::*,
+    image::{ImageLoaderSettings, ImagePlugin, ImageSamplerDescriptor},
     picking::prelude::*,
+    prelude::PluginGroup,
     scene::prelude::*,
     ui::prelude::*,
     ui_widgets::Button,
@@ -14,7 +17,9 @@ use state::{Card, Color, Fill, GameState, Quantity, Shape};
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(ImagePlugin {
+            default_sampler: ImageSamplerDescriptor::nearest(),
+        }))
         .add_systems(
             Startup,
             (state::initialize_game_state, initialize_ui).chain(),
@@ -98,11 +103,17 @@ fn card_button(card: Card) -> impl Scene {
         Node {
             border: px(5),
             border_radius: px(3),
-            padding: UiRect::axes(px(0), px(20))
         }
-        ImageNode {
-            image: card_to_asset_path(&card)
-        }
+        template(move |context|
+            Ok(ImageNode::new(
+                context.resource_mut::<AssetServer>()
+                    .load_builder()
+                    .with_settings(|settings: &mut ImageLoaderSettings| {
+                        settings.asset_usage = RenderAssetUsages::RENDER_WORLD;
+                    })
+                    .load(card_to_asset_path(&card))
+            ))
+        )
         Card {
             shape: {card.shape},
             quantity: {card.quantity},
