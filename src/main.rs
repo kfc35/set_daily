@@ -8,7 +8,6 @@ use bevy::{
     picking::prelude::*,
     prelude::PluginGroup,
     scene::prelude::*,
-    text::{FontSize, TextColor, TextFont},
     ui::prelude::*,
     ui_widgets::Button,
 };
@@ -77,11 +76,14 @@ fn logo() -> impl Scene {
     bsn! {
         Node {
             display: Display::Flex,
-            width: percent(100),
+            height: percent(100),
             justify_content: JustifyContent::Center,
             align_content: AlignContent::Center,
         }
         Children [
+            Node {
+                width: vw(90),
+            }
             ImageNode {
                 image: "logo.png"
             }
@@ -93,20 +95,17 @@ fn start_button() -> impl Scene {
     bsn! {
         Node {
             display: Display::Grid,
+            height: percent(100),
             align_content: AlignContent::Center,
             justify_content: JustifyContent::Center,
-            grid_template_rows: vec![
-                GridTrack::auto(), // The button is shaped to fit its contents.
-                GridTrack::flex(1.0),
-            ]
         }
         Children [
             Button
             Node {
                 justify_content: JustifyContent::Center,
                 align_content: AlignContent::Center,
-                padding: UiRect::axes(px(80), px(20)),
-                margin: UiRect::top(px(20)),
+                padding: UiRect::axes(vw(2), vh(4)),
+                margin: UiRect::axes(vw(0), vh(5)),
                 border: UiRect::all(px(5)),
             }
             BorderColor::all(TEXT_COLOR)
@@ -120,13 +119,13 @@ fn start_button() -> impl Scene {
                 *game_screen.single_mut().unwrap() = Visibility::Visible;
             })
             Children [
-                (
-                    Text::new("Start")
-                    TextFont {
-                        font_size: FontSize::Px(30.0),
-                    }
-                    TextColor(TEXT_COLOR)
-                )
+                Node {
+                    width: vw(33),
+                    height: vh(33),
+                }
+                ImageNode {
+                    image: "start_button.png"
+                }
             ]
         ]
     }
