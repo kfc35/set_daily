@@ -2,18 +2,21 @@ use bevy::{
     DefaultPlugins,
     app::{App, Startup, Update},
     asset::{AssetMetaCheck, AssetPlugin, AssetServer, RenderAssetUsages},
-    camera::Camera2d,
+    camera::{Camera2d, visibility::Visibility},
     ecs::prelude::*,
     image::{ImageLoaderSettings, ImagePlugin, ImageSamplerDescriptor},
     picking::prelude::*,
     prelude::PluginGroup,
     scene::prelude::*,
+    text::{FontSize, TextColor, TextFont},
     ui::prelude::*,
     ui_widgets::Button,
 };
 
 mod state;
 use state::{Card, Color, Fill, GameState, Quantity, Shape};
+
+const TEXT_COLOR: bevy::color::Color = bevy::color::Color::srgb(0., 158. / 255., 115. / 255.);
 
 fn main() {
     App::new()
@@ -30,7 +33,7 @@ fn main() {
         )
         .add_systems(
             Startup,
-            (state::initialize_game_state, initialize_ui).chain(),
+            (state::initialize_game_state, initialize_ui, setup).chain(),
         )
         .add_systems(
             Update,
@@ -43,8 +46,93 @@ fn main() {
 #[derive(Component, Clone, Default)]
 struct Score;
 
-fn initialize_ui(mut commands: Commands, state: Res<GameState>) {
+/// Marker component for the menu screen
+#[derive(Component, Clone, Default)]
+struct MenuScreen;
+
+/// Marker component for main game screen
+#[derive(Component, Clone, Default)]
+struct GameScreen;
+
+fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
+    commands.queue_spawn_scene(bsn! {
+        Node {
+            display: Display::Grid,
+            grid_template_rows: vec![RepeatedGridTrack::flex(2, 1.)],
+            justify_content: JustifyContent::Center,
+            align_content: AlignContent::Center,
+            width: percent(100),
+            height: percent(100),
+        }
+        MenuScreen
+        Children [
+            logo(),
+            start_button()
+        ]
+    });
+}
+
+fn logo() -> impl Scene {
+    bsn! {
+        Node {
+            display: Display::Flex,
+            width: percent(100),
+            justify_content: JustifyContent::Center,
+            align_content: AlignContent::Center,
+        }
+        Children [
+            ImageNode {
+                image: "logo.png"
+            }
+        ]
+    }
+}
+
+fn start_button() -> impl Scene {
+    bsn! {
+        Node {
+            display: Display::Grid,
+            align_content: AlignContent::Center,
+            justify_content: JustifyContent::Center,
+            grid_template_rows: vec![
+                GridTrack::auto(), // The button is shaped to fit its contents.
+                GridTrack::flex(1.0),
+            ]
+        }
+        Children [
+            Button
+            Node {
+                justify_content: JustifyContent::Center,
+                align_content: AlignContent::Center,
+                padding: UiRect::axes(px(80), px(20)),
+                margin: UiRect::top(px(20)),
+                border: UiRect::all(px(5)),
+            }
+            BorderColor::all(TEXT_COLOR)
+            on(|event: On<Pointer<Over>>, mut commands: Commands,| {
+                commands.entity(event.entity);
+            })
+            on(|_: On<Pointer<Click>>,
+                mut menu_screen: Query<&mut Visibility, (With<MenuScreen>, Without<GameScreen>)>,
+                mut game_screen: Query<&mut Visibility, (With<GameScreen>, Without<MenuScreen>)>| {
+                *menu_screen.single_mut().unwrap() = Visibility::Hidden;
+                *game_screen.single_mut().unwrap() = Visibility::Visible;
+            })
+            Children [
+                (
+                    Text::new("Start")
+                    TextFont {
+                        font_size: FontSize::Px(30.0),
+                    }
+                    TextColor(TEXT_COLOR)
+                )
+            ]
+        ]
+    }
+}
+
+fn initialize_ui(mut commands: Commands, state: Res<GameState>) {
     commands.queue_spawn_scene(bsn! {
         Node {
             flex_direction: FlexDirection::Column,
@@ -53,6 +141,8 @@ fn initialize_ui(mut commands: Commands, state: Res<GameState>) {
             justify_content: JustifyContent::SpaceAround
         }
         Children [ card_buttons(&state), score() ]
+        GameScreen
+        Visibility::Hidden
     });
 }
 
@@ -130,6 +220,7 @@ fn card_button(card: Card) -> impl Scene {
         }
         BackgroundColor(bevy::color::Color::WHITE)
         on(|event: On<Pointer<Click>>, mut commands: Commands, mut state: ResMut<GameState>| {
+            println!("I'm being clicked");
             if let Ok(idx) = state.current_guess.binary_search(&event.entity) {
                 state.current_guess.remove(idx);
                 commands.entity(event.entity).remove::<BorderColor>();
