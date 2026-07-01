@@ -429,16 +429,23 @@ fn end_game(mut commands: Commands, state: Res<GameState>, query: Query<Entity, 
         secs,
         state.elapsed.subsec_millis()
     );
-    let elapsed = format!("Finished in {precise_time}");
+    let elapsed = format!("Finish Time\n{precise_time}");
 
     ec.apply_scene(bsn! {
-        Node
+        Node {
+            display: Display::Grid,
+            grid_template_rows: vec![RepeatedGridTrack::flex(2, 1.)]
+        }
         Children [
-            Text::new(elapsed)
-            TextFont {
-                font_size: FontSize::Px(30.0),
-            }
-            TextColor(GREEN_COLOR)
+            (
+                Text::new(elapsed)
+                TextFont {
+                    font_size: FontSize::Px(30.0),
+                }
+                TextColor(GREEN_COLOR)
+                TextLayout::justify(bevy::text::Justify::Center)
+            ),
+            share_button(),
         ]
         Visibility::Visible
     });
@@ -488,100 +495,7 @@ fn end_game(mut commands: Commands, state: Res<GameState>, query: Query<Entity, 
                     TextColor(GREEN_COLOR)
                 ]
             ),
-            (
-                Button
-                Node {
-                    border: UiRect::all(px(5))
-                    align_content: AlignContent::Center,
-                    justify_content: JustifyContent::Center,
-                }
-                BorderColor::all(LIGHT_BLUE_COLOR)
-                on(|event: On<Pointer<Over>>,
-                    mut commands: Commands,
-                    children_query: Query<&Children>,
-                    text: Query<&mut TextColor>| {
-                    commands.entity(event.entity).insert(BorderColor::all(TEXT_OVER_COLOR));
-                    let Some(text_entity) = children_query
-                        .iter_descendants(event.entity)
-                        .find(|e| text.contains(*e))
-                    else {
-                        return;
-                    };
-                    commands.entity(text_entity).insert(TextColor(TEXT_OVER_COLOR));
-                })
-                on(|event: On<Pointer<Press>>,
-                    mut commands: Commands,
-                    children_query: Query<&Children>,
-                    text: Query<&mut TextColor>| {
-                    commands.entity(event.entity).insert(BorderColor::all(TEXT_PRESS_COLOR));
-                    let Some(text_entity) = children_query
-                        .iter_descendants(event.entity)
-                        .find(|e| text.contains(*e))
-                    else {
-                        return;
-                    };
-                    commands.entity(text_entity).insert(TextColor(TEXT_PRESS_COLOR));
-                })
-                on(|event: On<Pointer<Release>>,
-                    mut commands: Commands,
-                    children_query: Query<&Children>,
-                    text: Query<&mut TextColor>| {
-                    commands.entity(event.entity).insert(BorderColor::all(TEXT_OVER_COLOR));
-                    let Some(text_entity) = children_query
-                        .iter_descendants(event.entity)
-                        .find(|e| text.contains(*e))
-                    else {
-                        return;
-                    };
-                    commands.entity(text_entity).insert(TextColor(TEXT_OVER_COLOR));
-                })
-                on(|event: On<Pointer<Out>>,
-                    mut commands: Commands,
-                    children_query: Query<&Children>,
-                    text: Query<&mut TextColor>| {
-                    commands.entity(event.entity).insert(BorderColor::all(GREEN_COLOR));
-                    let Some(text_entity) = children_query
-                        .iter_descendants(event.entity)
-                        .find(|e| text.contains(*e))
-                    else {
-                        return;
-                    };
-                    commands.entity(text_entity).insert(TextColor(GREEN_COLOR));
-                })
-                on(|event: On<Pointer<Click>>,
-                    mut commands: Commands,
-                    mut clipboard: ResMut<Clipboard>,
-                    state: Res<GameState>,
-                    children_query: Query<&Children>,
-                    text: Query<&mut Text>| {
-                        let mins = state.elapsed.as_secs() / 60;
-                        let secs = state.elapsed.as_secs() % 60;
-                        let finish_time = format!("{}:{}", mins, secs);
-                        let Some(text_entity) = children_query
-                            .iter_descendants(event.entity)
-                            .find(|e| text.contains(*e))
-                        else {
-                            return;
-                        };
-                        match clipboard.set_text(format!("Daily Set - {} - Finish Time {}",
-                            state.date, finish_time)) {
-                            Ok(_) => {
-                                commands.entity(text_entity).insert(Text::new("Copied!\nShare Results"));
-                            }
-                            _ => {
-                                commands.entity(text_entity).insert(Text::new("Unable to copy results"));
-                            }
-                        }
-                })
-                Children [
-                    Text::new("Share Results")
-                    TextFont {
-                        font_size: FontSize::Px(30.0),
-                    }
-                    TextColor(LIGHT_BLUE_COLOR)
-                    TextLayout::justify(bevy::text::Justify::Center)
-                ]
-            ),
+            share_button(),
             (
                 Button
                 Node {
@@ -590,6 +504,10 @@ fn end_game(mut commands: Commands, state: Res<GameState>, query: Query<Entity, 
                     justify_content: JustifyContent::Center,
                 }
                 BorderColor::all(GREEN_COLOR)
+                on_handler_style_button::<Over>(TEXT_OVER_COLOR)
+                on_handler_style_button::<Press>(TEXT_PRESS_COLOR)
+                on_handler_style_button::<Release>(TEXT_OVER_COLOR)
+                on_handler_style_button::<Out>(GREEN_COLOR)
                 on(|_: On<Pointer<Click>>,
                     mut commands: Commands,
                     modal_query: Query<Entity, With<Modal>>| {
@@ -605,4 +523,75 @@ fn end_game(mut commands: Commands, state: Res<GameState>, query: Query<Entity, 
             )
         ]
     });
+}
+
+fn share_button() -> impl Scene {
+    bsn! {
+        Button
+        Node {
+            border: UiRect::all(px(5))
+            align_content: AlignContent::Center,
+            justify_content: JustifyContent::Center,
+        }
+        BorderColor::all(LIGHT_BLUE_COLOR)
+        on_handler_style_button::<Over>(TEXT_OVER_COLOR)
+        on_handler_style_button::<Press>(TEXT_PRESS_COLOR)
+        on_handler_style_button::<Release>(TEXT_OVER_COLOR)
+        on_handler_style_button::<Out>(GREEN_COLOR)
+        on(|event: On<Pointer<Click>>,
+            mut commands: Commands,
+            mut clipboard: ResMut<Clipboard>,
+            state: Res<GameState>,
+            children_query: Query<&Children>,
+            text: Query<&mut Text>| {
+                let mins = state.elapsed.as_secs() / 60;
+                let secs = state.elapsed.as_secs() % 60;
+                let finish_time = format!("{}:{}", mins, secs);
+                let Some(text_entity) = children_query
+                    .iter_descendants(event.entity)
+                    .find(|e| text.contains(*e))
+                else {
+                    return;
+                };
+                match clipboard.set_text(format!("Daily Set - {} - Finish Time {}",
+                    state.date, finish_time)) {
+                    Ok(_) => {
+                        commands.entity(text_entity).insert(Text::new("Copied!\nShare Results"));
+                    }
+                    _ => {
+                        commands.entity(text_entity).insert(Text::new("Unable to copy results"));
+                    }
+                }
+        })
+        Children [
+            Text::new("Share Results")
+            TextFont {
+                font_size: FontSize::Px(30.0),
+            }
+            TextColor(LIGHT_BLUE_COLOR)
+            TextLayout::justify(bevy::text::Justify::Center)
+        ]
+    }
+}
+
+fn on_handler_style_button<E>(text_and_border_color: bevy::color::Color) -> impl Scene
+where
+    E: core::fmt::Debug + Clone + bevy::reflect::Reflect,
+{
+    bsn! {
+        Node
+        on(move |event: On<Pointer<E>>,
+            mut commands: Commands,
+            children_query: Query<&Children>,
+            text: Query<&mut TextColor>| {
+            commands.entity(event.entity).insert(BorderColor::all(text_and_border_color));
+            let Some(text_entity) = children_query
+                .iter_descendants(event.entity)
+                .find(|e| text.contains(*e))
+            else {
+                return;
+            };
+            commands.entity(text_entity).insert(TextColor(text_and_border_color));
+        })
+    }
 }
