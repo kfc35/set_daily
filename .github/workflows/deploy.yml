@@ -36,11 +36,11 @@ jobs:
         run: cargo build --release --target wasm32-unknown-unknown
       - name: Run wasm-bindgen
         run: wasm-bindgen --out-name set_daily --out-dir deploy/wasm/target --target web target/wasm32-unknown-unknown/release/set_daily.wasm
-      - name: copy assets and web
+      - name: Copy assets/* and web/*
         run: |
           mkdir deploy/wasm/assets
-          cp -r assets/* deploy/wasm/assets/
-          cp -r web/* deploy/wasm/
+          cp -r ./assets/* ./deploy/wasm/assets/
+          cp -r ./web/* ./deploy/wasm/
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
