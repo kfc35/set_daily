@@ -8,6 +8,7 @@ use bevy::{
     picking::prelude::*,
     prelude::PluginGroup,
     scene::prelude::*,
+    text::{FontSize, TextColor, TextFont},
     ui::prelude::*,
     ui_widgets::Button,
 };
@@ -45,15 +46,15 @@ fn main() {
 #[derive(Component, Clone, Default)]
 struct Score;
 
-/// Marker component for the menu screen
+/// Marker component for the start screen
 #[derive(Component, Clone, Default)]
-struct MenuScreen;
+struct StartScreen;
 
 /// Marker component for main game screen
 #[derive(Component, Clone, Default)]
 struct GameScreen;
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, state: Res<GameState>) {
     commands.spawn(Camera2d);
     commands.queue_spawn_scene(bsn! {
         Node {
@@ -64,10 +65,10 @@ fn setup(mut commands: Commands) {
             width: percent(100),
             height: percent(100),
         }
-        MenuScreen
+        StartScreen
         Children [
             logo(),
-            start_button()
+            menu(state.date.clone())
         ]
     });
 }
@@ -91,21 +92,26 @@ fn logo() -> impl Scene {
     }
 }
 
-fn start_button() -> impl Scene {
+fn menu(date: String) -> impl Scene {
     bsn! {
         Node {
             display: Display::Grid,
+            grid_template_rows: vec![
+                GridTrack::flex(2.),
+                GridTrack::flex(1.),
+            ],
             height: percent(100),
             align_content: AlignContent::Center,
             justify_content: JustifyContent::Center,
         }
         Children [
+            // Start Button
             Button
             Node {
                 justify_content: JustifyContent::Center,
                 align_content: AlignContent::Center,
-                padding: UiRect::axes(vw(2), vh(4)),
-                margin: UiRect::axes(vw(0), vh(5)),
+                padding: UiRect::axes(percent(15), percent(4)),
+                margin: UiRect::axes(percent(0), percent(5)),
                 border: UiRect::all(px(5)),
             }
             BorderColor::all(TEXT_COLOR)
@@ -113,19 +119,32 @@ fn start_button() -> impl Scene {
                 commands.entity(event.entity);
             })
             on(|_: On<Pointer<Click>>,
-                mut menu_screen: Query<&mut Visibility, (With<MenuScreen>, Without<GameScreen>)>,
-                mut game_screen: Query<&mut Visibility, (With<GameScreen>, Without<MenuScreen>)>| {
+                mut menu_screen: Query<&mut Visibility, (With<StartScreen>, Without<GameScreen>)>,
+                mut game_screen: Query<&mut Visibility, (With<GameScreen>, Without<StartScreen>)>| {
                 *menu_screen.single_mut().unwrap() = Visibility::Hidden;
                 *game_screen.single_mut().unwrap() = Visibility::Visible;
             })
             Children [
                 Node {
-                    width: vw(33),
-                    height: vh(33),
+                    width: percent(100),
+                    max_width: vw(100),
+                    height: percent(100)
                 }
                 ImageNode {
                     image: "start_button.png"
                 }
+            ],
+            // Date
+            Node {
+                justify_content: JustifyContent::Center,
+                align_content: AlignContent::Center
+            }
+            Children [
+                Text::new(date)
+                TextFont {
+                    font_size: FontSize::Px(30.0),
+                }
+                TextColor(TEXT_COLOR)
             ]
         ]
     }
@@ -154,7 +173,9 @@ fn score() -> impl Scene {
         Children [
             (
                 Score
-                Text::new("0/6")
+                ImageNode {
+                    image: "score/0_of_6.png"
+                }
             )
         ]
     }

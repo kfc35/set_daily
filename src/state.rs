@@ -25,6 +25,9 @@ pub struct GameState {
     pub current_guess: Vec<Entity>,
     /// The sets which the user has found so far.
     pub found_sets: Vec<[Card; 3]>,
+    /// The date of the game in this game state, formatted as "%Y/%m/%d" i.e. 2026/06/30.
+    /// This is used for display and for figuring out whether this game state is stale.
+    pub date: String,
 }
 
 impl GameState {
@@ -287,11 +290,13 @@ impl Color {
 
 /// Initializes the game state.
 pub fn initialize_game_state(mut commands: Commands) {
-    // The game will change seeds every Eastern time day.
+    // The game will change seeds every day in Eastern time.
     let time = Utc::now().with_timezone(&chrono_tz::US::Eastern);
+    let date = format!("{}", time.format("%Y/%m/%d"));
     let year = time.year() as u64;
     let day_of_year = time.ordinal() as u64;
     let seed = bytemuck::cast::<[u64; 2], [u8; 16]>([year, day_of_year]);
+
 
     let (cards, sets) = initialize_cards(seed);
     let state = GameState {
@@ -299,6 +304,7 @@ pub fn initialize_game_state(mut commands: Commands) {
         sets,
         current_guess: vec![],
         found_sets: vec![],
+        date,
     };
     commands.insert_resource(state);
 }
