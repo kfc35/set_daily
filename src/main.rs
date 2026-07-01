@@ -269,7 +269,6 @@ fn card_button(card: Card) -> impl Scene {
         }
         BackgroundColor(bevy::color::Color::WHITE)
         on(|event: On<Pointer<Click>>, mut commands: Commands, mut state: ResMut<GameState>| {
-            println!("I'm being clicked");
             if let Ok(idx) = state.current_guess.binary_search(&event.entity) {
                 state.current_guess.remove(idx);
                 commands.entity(event.entity).remove::<BorderColor>();
@@ -309,8 +308,9 @@ fn card_to_asset_path(card: &Card) -> String {
 fn check_current_guess(
     mut commands: Commands,
     mut state: ResMut<GameState>,
+    asset_server: Res<AssetServer>,
     cards_query: Query<&Card>,
-    mut score: Query<&mut Text, With<Score>>,
+    mut score: Query<&mut ImageNode, With<Score>>,
 ) {
     for entity in state.current_guess.iter() {
         commands.entity(*entity).remove::<BorderColor>();
@@ -325,7 +325,8 @@ fn check_current_guess(
     guess.sort();
     if state.contains_guess(&guess) && !state.found_sets.contains(&guess) {
         state.found_sets.push(guess);
-        *score.single_mut().unwrap() = Text::new(format!("{}/6", state.found_sets.len()));
+        (*score.single_mut().unwrap()).image =
+            asset_server.load(format!("score/{}_of_6.png", state.found_sets.len()));
     }
     state.current_guess.clear();
 }
