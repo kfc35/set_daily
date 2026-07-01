@@ -28,10 +28,10 @@ jobs:
         with:
           target: wasm32-unknown-unknown
           toolchain: stable
-      - name: Checkout
-        uses: actions/checkout@v7
       - name: Install wasm-bindgen
         run: cargo install wasm-bindgen-cli
+      - name: Checkout
+        uses: actions/checkout@v7.0.0
       - name: Build wasm target
         run: cargo build --release --target wasm32-unknown-unknown
       - name: Run wasm-bindgen
@@ -42,9 +42,9 @@ jobs:
           cp -r ./assets/* ./deploy/wasm/assets/
           cp -r ./web/* ./deploy/wasm/
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v6.0.0
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5.0.0
         with:
           # Upload dist folder
           path: './deploy/wasm/'
