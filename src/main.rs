@@ -17,6 +17,8 @@ use bevy::{
 mod state;
 use state::{Card, Color, Fill, GameState, Quantity, Shape};
 
+const DEFAULT_BACKGROUND_COLOR: bevy::color::Color =
+    bevy::color::Color::srgb(40. / 255., 40. / 255., 40. / 255.);
 const GREEN_COLOR: bevy::color::Color = bevy::color::Color::srgb(0., 158. / 255., 115. / 255.);
 const TEXT_OVER_COLOR: bevy::color::Color =
     bevy::color::Color::srgb(240. / 255., 228. / 255., 66. / 255.);
@@ -50,7 +52,9 @@ fn main() {
         )
         .add_systems(
             FixedUpdate,
-            end_game.run_if(|state: Res<GameState>| state.found_sets.len() == 6),
+            end_game.run_if(|state: Res<GameState>, has_run: Local<bool>| {
+                state.found_sets.len() == 6 && run_once(has_run)
+            }),
         )
         .run();
 }
@@ -74,6 +78,10 @@ struct StartButtonImage;
 /// Marker component for the GameOver Text section
 #[derive(Component, Clone, Default)]
 struct GameOver;
+
+/// Marker component for the Modal
+#[derive(Component, Clone, Default)]
+struct Modal;
 
 fn setup(mut commands: Commands, state: Res<GameState>) {
     commands.spawn(Camera2d);
@@ -157,10 +165,10 @@ fn menu(date: String) -> impl Scene {
                 commands.entity(event.entity).insert(BorderColor::all(GREEN_COLOR));
                 start_button_image.single_mut().unwrap().image = asset_server.load("start/start_button.png");
             })
-            on(|_: On<Pointer<Click>>, mut state: ResMut<GameState>,
-                mut menu_screen: Query<&mut Visibility, (With<StartScreen>, Without<GameScreen>)>,
+            on(|_: On<Pointer<Click>>, mut state: ResMut<GameState>, mut commands: Commands,
+                mut menu_screen: Query<Entity, (With<StartScreen>, Without<GameScreen>)>,
                 mut game_screen: Query<&mut Visibility, (With<GameScreen>, Without<StartScreen>)>| {
-                *menu_screen.single_mut().unwrap() = Visibility::Hidden;
+                commands.entity(menu_screen.single_mut().unwrap()).despawn();
                 *game_screen.single_mut().unwrap() = Visibility::Visible;
                 state.is_active = true;
             })
@@ -369,21 +377,28 @@ fn check_current_guess(
                     grid_template_columns: vec![RepeatedGridTrack::flex(3, 1.)],
                     justify_content: JustifyContent::Center,
                     align_content: AlignContent::Center,
+                    border: UiRect::all(px(5))
                 }
                 BackgroundColor(bevy::color::Color::WHITE)
+                BorderColor::all(GREEN_COLOR)
                 Children [
+                    Node {
+                        padding: UiRect::right(px(5))
+                    }
                     ImageNode {
                         image: card_to_asset_path(&guess[0])
                     },
                     ImageNode {
                         image: card_to_asset_path(&guess[1])
                     },
+                    Node {
+                        padding: UiRect::left(px(5))
+                    }
                     ImageNode {
                         image: card_to_asset_path(&guess[2])
                     },
                 ]
             });
-
         if state.found_sets.len() == 6 {
             state.is_active = false;
         }
@@ -396,19 +411,24 @@ fn increment_elapsed(mut state: ResMut<GameState>, time: Res<Time>) {
 }
 
 fn end_game(mut commands: Commands, state: Res<GameState>, query: Query<Entity, With<GameOver>>) {
+    println!("End Game!");
     let mut ec = commands.entity(query.single().unwrap());
     let mins = state.elapsed.as_secs() / 60;
     let secs = state.elapsed.as_secs() % 60;
     let mins_plural = if mins != 1 { "" } else { "s" };
-    let elapsed = format!(
-        "Total time: {} min{} {}.{} secs",
+    let finish_time = format!("{}:{}", mins, secs);
+    let precise_time = format!(
+        "{} min{} {}.{} secs",
         mins,
         mins_plural,
         secs,
         state.elapsed.subsec_millis()
     );
+    let elapsed = format!("Finished in {precise_time}");
 
+    // TODO figure this out cause for some reason it's not working...
     ec.apply_scene(bsn! {
+        Node
         Children [
             Text::new(elapsed)
             TextFont {
@@ -417,5 +437,64 @@ fn end_game(mut commands: Commands, state: Res<GameState>, query: Query<Entity, 
             TextColor(GREEN_COLOR)
         ]
         Visibility::Visible
+    });
+
+    // add a modal.
+    commands.spawn_scene(bsn! {
+        Modal
+        ZIndex(1)
+        Node {
+            display: Display::Grid,
+            grid_template_rows: vec![
+                GridTrack::flex(2.),
+                GridTrack::flex(1.),
+                GridTrack::flex(1.),
+            ]
+            left: percent(5),
+            top: percent(5),
+            height: percent(90),
+            width: percent(90),
+            border: px(5),
+            align_content: AlignContent::Center,
+            justify_content: JustifyContent::Center,
+        }
+        BorderColor::all(GREEN_COLOR)
+        BackgroundColor(DEFAULT_BACKGROUND_COLOR)
+        Children [
+            (
+                Node {
+                    width: vw(70)
+                }
+                ImageNode {
+                    image: "congratulations.png"
+                }
+            ),
+            (
+                Text::new(finish_time)
+                TextFont {
+                    font_size: FontSize::Px(30.0),
+                }
+                TextColor(GREEN_COLOR)
+            ),
+            (
+                Button
+                Node {
+                    border: UiRect::all(px(5))
+                }
+                BorderColor::all(GREEN_COLOR)
+                on(|_: On<Pointer<Click>>,
+                    mut commands: Commands,
+                    modal_query: Query<Entity, With<Modal>>| {
+                    commands.entity(modal_query.single().unwrap()).despawn();
+                })
+                Children [
+                    Text::new("Close")
+                    TextFont {
+                        font_size: FontSize::Px(30.0),
+                    }
+                    TextColor(GREEN_COLOR)
+                ]
+            )
+        ]
     });
 }
