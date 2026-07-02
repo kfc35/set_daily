@@ -37,6 +37,7 @@ fn main() {
                     default_sampler: ImageSamplerDescriptor::nearest(),
                 })
                 .set(AssetPlugin {
+                    // Prevent 404's from happening on the web.
                     meta_check: AssetMetaCheck::Never,
                     ..Default::default()
                 }),
@@ -479,7 +480,7 @@ fn end_game(mut commands: Commands, state: Res<GameState>, query: Query<Entity, 
                     justify_content: JustifyContent::Center,
                 }
                 ImageNode {
-                    image: "congratulations.png"
+                    image: get_end_game_image_asset_path(&state)
                 }
             ),
             (
@@ -606,5 +607,13 @@ where
             };
             commands.entity(text_entity).insert(TextColor(text_and_border_color));
         })
+    }
+}
+
+fn get_end_game_image_asset_path(state: &Res<GameState>) -> String {
+    if state.date == "2026/07/02" {
+        "well_done.png".to_string()
+    } else {
+        "congratulations.png".to_string()
     }
 }
