@@ -1,6 +1,9 @@
 # ![Daily Set](assets/logo_large.png)
 Just Another Daily Game, NOT made with AI.
 
+## License
+This software is licensed under the [Anti-Capitalist Software License (v 1.4)](https://anticapitalist.software/).
+
 ## Assets Licensing
 
 All assets were created by the author [@kfc35](https://github.com/kfc35). All assets except for individual card assets (card assets are located in the assets/card sub directories) are [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). Card assets are [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (no copyright).
