@@ -35,7 +35,7 @@ jobs:
       - name: Build wasm target
         run: cargo build --release --target wasm32-unknown-unknown
       - name: Run wasm-bindgen
-        run: wasm-bindgen --out-name set_daily --out-dir deploy/wasm/target --target web target/wasm32-unknown-unknown/release/set_daily.wasm
+        run: wasm-bindgen --out-name daily_set --out-dir deploy/wasm/target --target web target/wasm32-unknown-unknown/release/daily_set.wasm
       - name: Copy assets/* and web/*
         run: |
           mkdir ./deploy/wasm/assets
